@@ -1,0 +1,12 @@
+{
+  "framework": "nextjs",
+  "regions": ["bom1"],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "s-maxage=3600, stale-while-revalidate" }
+      ]
+    }
+  ]
+}
