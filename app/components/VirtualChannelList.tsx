@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import Image from 'next/image';
 import type { Channel } from '../api/channels/route';
@@ -11,11 +11,13 @@ interface VirtualChannelListProps {
     favorites: Set<string>;
     onChannelSelect: (channel: Channel) => void;
     onToggleFavorite: (channelId: string, e: React.MouseEvent) => void;
+    scrollToSelected?: boolean;
 }
 
 /**
  * Virtualized Channel List
  * Only renders visible channels for performance with 598+ channels
+ * Preserves scroll position when channel changes
  */
 export function VirtualChannelList({
     channels,
@@ -23,8 +25,10 @@ export function VirtualChannelList({
     favorites,
     onChannelSelect,
     onToggleFavorite,
+    scrollToSelected = false,
 }: VirtualChannelListProps) {
     const parentRef = useRef<HTMLDivElement>(null);
+    const [hasScrolledToSelected, setHasScrolledToSelected] = useState(false);
 
     const virtualizer = useVirtualizer({
         count: channels.length,
@@ -33,9 +37,33 @@ export function VirtualChannelList({
         overscan: 5, // Render 5 extra items above/below viewport
     });
 
+    // When channel list changes (e.g., category filter), scroll to selected channel if needed
+    useEffect(() => {
+        if (scrollToSelected && selectedChannel && !hasScrolledToSelected) {
+            const index = channels.findIndex(c => c.id === selectedChannel.id);
+            if (index >= 0) {
+                // Use requestAnimationFrame to ensure DOM is ready
+                requestAnimationFrame(() => {
+                    virtualizer.scrollToIndex(index, { align: 'center' });
+                });
+                setHasScrolledToSelected(true);
+            }
+        }
+    }, [scrollToSelected, selectedChannel, channels, virtualizer, hasScrolledToSelected]);
+
+    // Reset scroll tracking when channels list changes (filter/search)
+    useEffect(() => {
+        setHasScrolledToSelected(false);
+    }, [channels.length]);
+
     const getInitial = useCallback((name: string) => {
         return name.charAt(0).toUpperCase();
     }, []);
+
+    // Handle channel select without resetting scroll
+    const handleSelect = useCallback((channel: Channel) => {
+        onChannelSelect(channel);
+    }, [onChannelSelect]);
 
     return (
         <div
@@ -52,10 +80,13 @@ export function VirtualChannelList({
             >
                 {virtualizer.getVirtualItems().map((virtualItem) => {
                     const channel = channels[virtualItem.index];
+                    const isSelected = selectedChannel?.id === channel.id;
+
                     return (
                         <div
                             key={channel.id}
-                            className={`channel-card ${selectedChannel?.id === channel.id ? 'active' : ''}`}
+                            data-index={virtualItem.index}
+                            className={`channel-card ${isSelected ? 'active' : ''}`}
                             style={{
                                 position: 'absolute',
                                 top: 0,
@@ -64,7 +95,7 @@ export function VirtualChannelList({
                                 height: `${virtualItem.size}px`,
                                 transform: `translateY(${virtualItem.start}px)`,
                             }}
-                            onClick={() => onChannelSelect(channel)}
+                            onClick={() => handleSelect(channel)}
                         >
                             {channel.logo ? (
                                 <Image
