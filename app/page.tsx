@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import VideoPlayer from './components/VideoPlayer';
+import { VirtualChannelList } from './components/VirtualChannelList';
+import { ChannelListSkeleton, CategoryTabsSkeleton } from './components/Skeleton';
+import { useSwipeGestures } from './components/SwipeGestures';
 import type { Channel } from './api/channels/route';
 
 interface ChannelsResponse {
@@ -22,6 +24,7 @@ export default function Home() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
 
   // Load favorites from localStorage
   useEffect(() => {
@@ -72,6 +75,38 @@ export default function Home() {
     router.push(`/watch/${slug}`, { scroll: false });
   }, [router]);
 
+  // Swipe to change channel
+  const handleSwipeChannel = useCallback((direction: 'next' | 'prev') => {
+    if (!selectedChannel || filteredChannels.length === 0) return;
+
+    const currentIndex = filteredChannels.findIndex(c => c.id === selectedChannel.id);
+    if (currentIndex === -1) return;
+
+    let newIndex: number;
+    if (direction === 'next') {
+      newIndex = (currentIndex + 1) % filteredChannels.length;
+    } else {
+      newIndex = currentIndex === 0 ? filteredChannels.length - 1 : currentIndex - 1;
+    }
+
+    handleChannelSelect(filteredChannels[newIndex]);
+  }, [selectedChannel, filteredChannels, handleChannelSelect]);
+
+  // Swipe gesture handlers
+  const swipeHandlers = useSwipeGestures({
+    onSwipeLeft: () => handleSwipeChannel('next'),
+    onSwipeRight: () => handleSwipeChannel('prev'),
+  });
+
+  // Show swipe hint on first play
+  useEffect(() => {
+    if (selectedChannel && !localStorage.getItem('swipe-hint-shown')) {
+      setShowSwipeHint(true);
+      localStorage.setItem('swipe-hint-shown', 'true');
+      setTimeout(() => setShowSwipeHint(false), 3000);
+    }
+  }, [selectedChannel]);
+
   // Toggle favorite
   const toggleFavorite = useCallback((channelId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -86,11 +121,6 @@ export default function Home() {
       return newFavorites;
     });
   }, []);
-
-  // Get channel initial for placeholder
-  const getInitial = (name: string) => {
-    return name.charAt(0).toUpperCase();
-  };
 
   return (
     <div className="app-container">
@@ -127,8 +157,8 @@ export default function Home() {
 
       {/* Main Content - Mobile First Layout */}
       <main className="main-content mobile-first">
-        {/* Player Section */}
-        <section className="player-section">
+        {/* Player Section with Swipe Gestures */}
+        <section className="player-section" {...swipeHandlers}>
           {selectedChannel ? (
             <>
               <VideoPlayer
@@ -144,6 +174,15 @@ export default function Home() {
                   </span>
                 )}
               </div>
+              {/* Swipe hint for first-time users */}
+              {showSwipeHint && (
+                <div className="swipe-indicator">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                  Swipe to change channel
+                </div>
+              )}
             </>
           ) : (
             <div className="video-container">
@@ -161,84 +200,53 @@ export default function Home() {
         {/* Sidebar */}
         <aside className="sidebar">
           {/* Category Tabs */}
-          <div className="category-tabs">
-            {categories.map(category => (
-              <button
-                key={category}
-                className={`category-tab ${selectedCategory === category ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(category)}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
+          {isLoading ? (
+            <CategoryTabsSkeleton count={6} />
+          ) : (
+            <div className="category-tabs">
+              {categories.map(category => (
+                <button
+                  key={category}
+                  className={`category-tab ${selectedCategory === category ? 'active' : ''}`}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Channel Count */}
           <div className="channel-count">
-            {filteredChannels.length} channel{filteredChannels.length !== 1 ? 's' : ''}
+            {isLoading ? 'Loading...' : `${filteredChannels.length} channel${filteredChannels.length !== 1 ? 's' : ''}`}
             {searchQuery && ` matching "${searchQuery}"`}
           </div>
 
-          {/* Channel List */}
-          <div className="channel-list">
-            {isLoading ? (
-              <div className="loading">
-                <div className="spinner" />
-              </div>
-            ) : error ? (
-              <div className="error">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                <p>{error}</p>
-              </div>
-            ) : filteredChannels.length === 0 ? (
-              <div className="no-results">
-                <p>No channels found</p>
-              </div>
-            ) : (
-              filteredChannels.map(channel => (
-                <div
-                  key={channel.id}
-                  className={`channel-card ${selectedChannel?.id === channel.id ? 'active' : ''}`}
-                  onClick={() => handleChannelSelect(channel)}
-                >
-                  {channel.logo ? (
-                    <Image
-                      src={channel.logo}
-                      alt={channel.name}
-                      width={48}
-                      height={48}
-                      className="channel-logo"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="channel-logo-placeholder">
-                      {getInitial(channel.name)}
-                    </div>
-                  )}
-                  <div className="channel-details">
-                    <div className="channel-name">{channel.name}</div>
-                    <div className="channel-category">
-                      {channel.category}
-                      {channel.quality && ` • ${channel.quality}`}
-                    </div>
-                  </div>
-                  <button
-                    className={`favorite-btn ${favorites.has(channel.id) ? 'active' : ''}`}
-                    onClick={(e) => toggleFavorite(channel.id, e)}
-                    aria-label={favorites.has(channel.id) ? 'Remove from favorites' : 'Add to favorites'}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill={favorites.has(channel.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    </svg>
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
+          {/* Channel List - Virtualized for performance */}
+          {isLoading ? (
+            <ChannelListSkeleton count={8} />
+          ) : error ? (
+            <div className="error">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p>{error}</p>
+            </div>
+          ) : filteredChannels.length === 0 ? (
+            <div className="no-results">
+              <p>No channels found</p>
+            </div>
+          ) : (
+            <VirtualChannelList
+              channels={filteredChannels}
+              selectedChannel={selectedChannel}
+              favorites={favorites}
+              onChannelSelect={handleChannelSelect}
+              onToggleFavorite={toggleFavorite}
+            />
+          )}
         </aside>
       </main>
     </div>

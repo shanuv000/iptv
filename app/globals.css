@@ -598,3 +598,195 @@ body {
     display: none;
   }
 }
+
+/* ============================================
+   SKELETON LOADING ANIMATIONS
+   ============================================ */
+
+.skeleton {
+  background: linear-gradient(90deg,
+      var(--bg-card) 25%,
+      var(--bg-card-hover) 50%,
+      var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.channel-card-skeleton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.skeleton-logo {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.skeleton-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.skeleton-title {
+  height: 16px;
+  width: 70%;
+}
+
+.skeleton-subtitle {
+  height: 12px;
+  width: 40%;
+}
+
+.skeleton-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.channel-list-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.category-tabs-skeleton {
+  display: flex;
+  gap: var(--space-sm);
+  overflow: hidden;
+}
+
+.skeleton-tab {
+  height: 36px;
+  width: 80px;
+}
+
+.video-player-skeleton {
+  aspect-ratio: 16 / 9;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+}
+
+.skeleton-video {
+  flex: 1;
+  background: var(--bg-card);
+  margin: var(--space-md);
+  border-radius: var(--radius-md);
+}
+
+.skeleton-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+}
+
+.skeleton-play-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.skeleton-progress {
+  flex: 1;
+  height: 4px;
+}
+
+.skeleton-time {
+  width: 60px;
+  height: 14px;
+}
+
+/* ============================================
+   PICTURE-IN-PICTURE BUTTON
+   ============================================ */
+
+.pip-btn {
+  position: absolute;
+  top: var(--space-md);
+  left: var(--space-md);
+  padding: var(--space-sm);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+
+.pip-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.05);
+}
+
+.pip-btn.active {
+  background: var(--accent);
+  color: white;
+}
+
+/* ============================================
+   SWIPE GESTURE INDICATOR
+   ============================================ */
+
+.swipe-indicator {
+  position: absolute;
+  bottom: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  opacity: 0;
+  animation: fade-in-out 3s forwards;
+  pointer-events: none;
+}
+
+@keyframes fade-in-out {
+  0% {
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.swipe-indicator svg {
+  width: 16px;
+  height: 16px;
+}

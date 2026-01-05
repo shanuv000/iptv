@@ -128,6 +128,30 @@ export default function VideoPlayer({ url, channelName, onError }: VideoPlayerPr
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentQuality, setCurrentQuality] = useState<string>('Auto');
+    const [isPipActive, setIsPipActive] = useState(false);
+
+    // Check if PiP is supported
+    const isPipSupported = typeof document !== 'undefined' &&
+        'pictureInPictureEnabled' in document &&
+        document.pictureInPictureEnabled;
+
+    // Toggle Picture-in-Picture
+    const togglePip = useCallback(async () => {
+        const video = videoRef.current;
+        if (!video || !isPipSupported) return;
+
+        try {
+            if (document.pictureInPictureElement) {
+                await document.exitPictureInPicture();
+                setIsPipActive(false);
+            } else {
+                await video.requestPictureInPicture();
+                setIsPipActive(true);
+            }
+        } catch (err) {
+            console.warn('PiP error:', err);
+        }
+    }, [isPipSupported]);
 
     // Handle quality level info
     const updateQuality = useCallback((hls: Hls) => {
@@ -285,6 +309,20 @@ export default function VideoPlayer({ url, channelName, onError }: VideoPlayerPr
                 <div className="quality-badge">
                     {currentQuality}
                 </div>
+            )}
+            {/* Picture-in-Picture button */}
+            {isPipSupported && !isLoading && !error && (
+                <button
+                    className={`pip-btn ${isPipActive ? 'active' : ''}`}
+                    onClick={togglePip}
+                    title={isPipActive ? 'Exit Picture-in-Picture' : 'Enter Picture-in-Picture'}
+                    aria-label="Toggle Picture-in-Picture"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" />
+                        <rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor" />
+                    </svg>
+                </button>
             )}
         </div>
     );
