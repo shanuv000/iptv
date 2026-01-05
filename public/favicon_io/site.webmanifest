@@ -1,23 +1,42 @@
 {
     "name": "IPTV India",
     "short_name": "IPTV",
-    "description": "Watch 500+ Indian TV channels live",
+    "description": "Watch 500+ Indian TV channels live - News, Entertainment, Sports, Movies",
     "author": "Vaibhav",
     "icons": [
         {
             "src": "/favicon_io/android-chrome-192x192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         },
         {
             "src": "/favicon_io/android-chrome-512x512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         }
     ],
     "theme_color": "#0a0a0a",
     "background_color": "#0a0a0a",
     "display": "standalone",
+    "orientation": "any",
     "start_url": "/",
-    "scope": "/"
+    "scope": "/",
+    "categories": [
+        "entertainment",
+        "news",
+        "sports"
+    ],
+    "lang": "en",
+    "dir": "ltr",
+    "prefer_related_applications": false,
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "Watch Live TV",
+            "url": "/",
+            "description": "Open IPTV India to watch live channels"
+        }
+    ]
 }
